@@ -15,6 +15,12 @@ key = paramiko.RSAKey.from_private_key_file('nahornyi.pem')
 clientssh = paramiko.SSHClient()
 clientssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 ###############################################################
+#set params for sftp
+port = 22
+
+remotepath = '/home/ec2-user/volume.sh'
+localpath = './volume.sh'
+##############################################################
 # set vaiables for resourses of lib boto3
 ec2 = boto3.resource('ec2', 'eu-west-1')
 client = boto3.client('ec2', 'eu-west-1')
@@ -37,6 +43,12 @@ def main():
      create_ec2()
      for instance in instances:
          inst_id=instance.id
+         print(inst_id)
+     time.sleep(60) # wait for the creating instance and getting public ip
+     for instance in ec2.instances.all():
+         if (instance.id) == inst_id:
+            inst_ip=instance.public_ip_address
+            print(inst_ip)
      create_secgrp()
 #     create_vol()
      response = client.attach_volume(
@@ -45,6 +57,17 @@ def main():
          VolumeId=create_vol(),
          DryRun=False
      )
+
+     transport = paramiko.Transport((inst_ip, port))
+     transport.connect(username='ec2-user', pkey=key)
+     sftp = paramiko.SFTPClient.from_transport(transport)
+     sftp.put(localpath, remotepath)
+     sftp.close()
+     transport.close()
+     clientssh.connect(hostname=inst_ip, username="ec2-user", pkey=key)
+     stdin, stdout, stderr = clientssh.exec_command('chmod +x volume.sh')
+     stdin, stdout, stderr = clientssh.exec_command('sh /volume.sh')
+
 
 ##########    METHODS     ####################################
 ##############################################################
@@ -68,7 +91,7 @@ def create_ec2():
 def create_secgrp():
     sgroup = client.describe_vpcs()
     sgroup = client.create_security_group(
-        GroupName=''.join(random.choices(string.ascii_uppercase + string.digits, k=10)),
+        GroupName=''.join(random.choices(string.ascii_uppercase + string.digits, k=3)),
         Description='only allow SSH and HTTP traffic',
         VpcId=vpc_id,
     )
@@ -103,7 +126,7 @@ def create_vol():
                }
          ]
     )
-    time.sleep(30)
+    time.sleep(60)
     print ('Volume Id: ', vol.id)
     return vol.id
 
@@ -111,3 +134,4 @@ def create_vol():
 
 if __name__ == "__main__":
     main()
+
