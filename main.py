@@ -8,10 +8,10 @@ import random
 import time
 ##############################################################
 #set tags
-name = 'Yevhen'
-surname = 'Nahornyi'
+name = 'Your_name'
+surname = 'Your_surname'
 # set key and params for ssh
-key = paramiko.RSAKey.from_private_key_file('nahornyi.pem')
+key = paramiko.RSAKey.from_private_key_file('your_key.pem')
 clientssh = paramiko.SSHClient()
 clientssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 ###############################################################
@@ -33,7 +33,7 @@ print ('VPC ID is:',vpc_id)
 #filter for taking instance ID
 instances = ec2.instances.filter(
     Filters=[
-        {'Name': 'key-name', 'Values': ['nahornyi']},
+        {'Name': 'key-name', 'Values': ['your_key_name']},
         {'Name': 'instance-state-name', 'Values': ['pending']}
     ]
 )
@@ -78,7 +78,7 @@ def create_ec2():
         MinCount=1,
         MaxCount=1,
         InstanceType='t2.micro',
-        KeyName='nahornyi',
+        KeyName='your_key_name',
         Placement={'AvailabilityZone': 'eu-west-1c'},
         TagSpecifications=[
             {
@@ -111,7 +111,7 @@ def create_secgrp():
         ])
 #set tag for security group
     ec2.create_tags(Resources=[sgroup_id],
-                    Tags=[{'Key': 'Name', 'Value': 'Yevhen'}, {'Key': 'Surname', 'Value': 'Nahornyi'}])
+                    Tags=[{'Key': 'Name', 'Value': name}, {'Key': 'Surname', 'Value': surname}])
 
 # Createing EBS volume "magnetic", 1GB size
 def create_vol():
@@ -122,7 +122,7 @@ def create_vol():
          TagSpecifications=[
                {
                 'ResourceType': 'volume',
-                'Tags': [{'Key': 'Name','Value': 'Yevhen'},{'Key': 'Surname','Value': 'Nahornyi'}]
+                'Tags': [{'Key': 'Name', 'Value': name}, {'Key': 'Surname', 'Value': surname}]
                }
          ]
     )
